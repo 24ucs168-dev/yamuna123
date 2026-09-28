@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ChatGPT - AI Banking Assistant (n8n)</title>
+  <meta name="description" content="A state-of-the-art, modern ChatGPT-style conversational UI seamlessly connected to an n8n AI webhook workflow.">
+  <meta name="keywords" content="ChatGPT, n8n, AI Chatbot, Banking Assistant, Webhook, Conversational UI">
+  <meta name="author" content="Antigravity">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2246%22 fill=%22%2310a37f%22/><path d=%22M50 22 C34.5 22 22 34.5 22 50 C22 65.5 34.5 78 50 78 C65.5 78 78 65.5 78 50 C78 34.5 65.5 22 50 22 Z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-dasharray=%2216 10%22/></svg>">
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Highlight.js for Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout" id="appLayout">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Chat history and navigation">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"></path>
+              <path d="M8 12a4 4 0 1 0 8 0 4 4 0 1 0-8 0z"></path>
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+            </svg>
+          </div>
+          <span class="brand-name">ChatGPT</span>
+          <span class="brand-badge">n8n</span>
+        </div>
+        <button class="icon-btn sidebar-toggle-btn" id="collapseSidebarBtn" title="Close sidebar" aria-label="Close sidebar">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+
+      <!-- New Chat Button -->
+      <div class="sidebar-action-wrap">
+        <button class="new-chat-btn" id="newChatBtn" title="Start a fresh chat (Ctrl+Shift+O)">
+          <i class="fa-solid fa-plus"></i>
+          <span>New chat</span>
+          <kbd class="shortcut-kbd">⌘O</kbd>
+        </button>
+      </div>
+
+      <!-- Search History -->
+      <div class="history-search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchHistoryInput" placeholder="Search chats..." autocomplete="off">
+      </div>
+
+      <!-- Chat History List -->
+      <div class="chat-history-container" id="chatHistoryContainer" role="navigation" aria-label="Previous chats">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+
+      <!-- Sidebar Footer (User & Settings) -->
+      <div class="sidebar-footer">
+        <div class="user-profile" id="userProfileBtn">
+          <div class="user-avatar">
+            <i class="fa-solid fa-user"></i>
+            <span class="user-status-dot online"></span>
+          </div>
+          <div class="user-info">
+            <span class="user-name">Guest User</span>
+            <span class="user-plan">Connected to n8n</span>
+          </div>
+        </div>
+        <button class="icon-btn" id="sidebarSettingsBtn" title="Settings" aria-label="Open settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="main-workspace" id="mainWorkspace">
+      <!-- Top Navigation Bar -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="icon-btn" id="openSidebarBtn" title="Open sidebar" aria-label="Open sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <!-- Model Selector Dropdown -->
+          <div class="model-selector-wrapper" id="modelSelectorWrapper">
+            <button class="model-selector-btn" id="modelSelectorBtn" aria-haspopup="true" aria-expanded="false">
+              <span class="model-icon"><i class="fa-solid fa-bolt"></i></span>
+              <span class="model-title" id="currentModelLabel">AI Banking Assistant</span>
+              <i class="fa-solid fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="model-dropdown-menu" id="modelDropdownMenu">
+              <div class="dropdown-header">Connected Workflow</div>
+              <div class="dropdown-item active" data-model="banking">
+                <div class="item-left">
+                  <i class="fa-solid fa-building-columns item-icon"></i>
+                  <div>
+                    <div class="item-name">n8n Banking Assistant</div>
+                    <div class="item-desc">OpenRouter LLM Chain Webhook</div>
+                  </div>
+                </div>
+                <i class="fa-solid fa-check check-icon"></i>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="webhook-endpoint-info">
+                <span class="endpoint-label">Webhook URL:</span>
+                <span class="endpoint-url" title="https://yamuna0804.app.n8n.cloud/webhook/chat">yamuna0804.app.n8n.cloud</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connection Status Pill -->
+          <div class="connection-status-pill" id="connectionStatusPill" title="Webhook Connection Status">
+            <span class="status-pulse-dot"></span>
+            <span class="status-text" id="connectionStatusText">n8n Live</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Clear current chat -->
+          <button class="icon-btn" id="headerClearChatBtn" title="Clear current messages" aria-label="Clear chat">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+
+          <!-- Export chat -->
+          <button class="icon-btn" id="headerExportBtn" title="Export conversation as Markdown" aria-label="Export chat">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+          </button>
+
+          <!-- Theme toggle -->
+          <button class="icon-btn" id="themeToggleBtn" title="Switch Theme (Dark / Light)" aria-label="Toggle theme">
+            <i class="fa-regular fa-moon" id="themeIcon"></i>
+          </button>
+
+          <!-- Settings modal trigger -->
+          <button class="icon-btn" id="headerSettingsBtn" title="Webhook & API Settings" aria-label="Settings">
+            <i class="fa-solid fa-sliders"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Chat Messages Area -->
+      <section class="chat-viewport" id="chatViewport">
+        <div class="chat-content-container" id="chatContentContainer">
+          <!-- Welcome / Zero State (Shown when no messages) -->
+          <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-spark-icon">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14" stroke-linecap="round" opacity="0.6"/>
+                <circle cx="12" cy="12" r="7" fill="url(#sparkGradient)" stroke="#10a37f" stroke-width="2"/>
+                <defs>
+                  <radialGradient id="sparkGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#10a37f" stop-opacity="0.8"/>
+                    <stop offset="100%" stop-color="#0e8366" stop-opacity="0.2"/>
+                  </radialGradient>
+                </defs>
+              </svg>
+            </div>
+            <h1 class="welcome-title">What can I help you with today?</h1>
+            <p class="welcome-subtitle">
+              Ask any question to your <strong>n8n AI Banking Assistant</strong> — accounts, loans, credit cards, or banking procedures.
+            </p>
+
+            <!-- Suggestion Prompt Cards -->
+            <div class="suggestion-grid" id="suggestionGrid">
+              <button class="suggestion-card" data-prompt="What are the requirements and documents needed to open a savings bank account?">
+                <div class="suggestion-icon"><i class="fa-solid fa-building-columns"></i></div>
+                <div class="suggestion-text">
+                  <strong>Open a Bank Account</strong>
+                  <span>Documents & minimum balance rules</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square card-arrow"></i>
+              </button>
+
+              <button class="suggestion-card" data-prompt="Can you explain how credit card reward points work and what cards are available?">
+                <div class="suggestion-icon"><i class="fa-solid fa-credit-card"></i></div>
+                <div class="suggestion-text">
+                  <strong>Credit & Debit Cards</strong>
+                  <span>Eligibility, rewards & annual fees</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square card-arrow"></i>
+              </button>
+
+              <button class="suggestion-card" data-prompt="What are the current interest rates and repayment options for personal and home loans?">
+                <div class="suggestion-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <div class="suggestion-text">
+                  <strong>Loan Assistance</strong>
+                  <span>Personal, home & vehicle loans</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square card-arrow"></i>
+              </button>
+
+              <button class="suggestion-card" data-prompt="How do I safely activate internet banking and set daily transaction limits?">
+                <div class="suggestion-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="suggestion-text">
+                  <strong>Security & Services</strong>
+                  <span>Internet banking & transaction limits</span>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square card-arrow"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Message Thread List -->
+          <div class="messages-list" id="messagesList" role="log" aria-live="polite">
+            <!-- Dynamically populated via app.js -->
+          </div>
+        </div>
+
+        <!-- Floating Scroll to Bottom Button -->
+        <button class="scroll-bottom-btn" id="scrollBottomBtn" title="Scroll to latest message" aria-label="Scroll to bottom">
+          <i class="fa-solid fa-arrow-down"></i>
+        </button>
+      </section>
+
+      <!-- Chat Input Area -->
+      <footer class="chat-input-section">
+        <div class="chat-input-wrapper">
+          <!-- Active Attachment Preview Chip (Optional) -->
+          <div class="attachment-preview" id="attachmentPreview" style="display: none;">
+            <i class="fa-solid fa-file-lines"></i>
+            <span class="attachment-name" id="attachmentName">file.txt</span>
+            <button class="attachment-remove-btn" id="attachmentRemoveBtn" title="Remove attachment">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <div class="input-bar" id="inputBar">
+            <!-- Hidden File Input for Attachments -->
+            <input type="file" id="fileAttachmentInput" accept=".txt,.json,.csv,.md,.pdf,.png,.jpg" style="display: none;">
+            <button class="input-action-btn attach-btn" id="attachFileBtn" title="Attach file or document" aria-label="Attach file">
+              <i class="fa-solid fa-paperclip"></i>
+            </button>
+
+            <!-- Auto-expanding Textarea -->
+            <textarea
+              id="promptInput"
+              class="prompt-textarea"
+              placeholder="Ask anything or request banking assistance..."
+              rows="1"
+              autofocus
+            ></textarea>
+
+            <div class="input-right-actions">
+              <!-- Voice Typing / Microphone Button -->
+              <button class="input-action-btn mic-btn" id="voiceTypingBtn" title="Voice typing (Dictate prompt)" aria-label="Voice input">
+                <i class="fa-solid fa-microphone" id="micIcon"></i>
+              </button>
+
+              <!-- Stop Response Generation (Visible when loading) -->
+              <button class="input-action-btn stop-btn" id="stopGenerationBtn" title="Stop generating" aria-label="Stop generation" style="display: none;">
+                <i class="fa-solid fa-stop"></i>
+              </button>
+
+              <!-- Send Button -->
+              <button class="send-btn" id="sendBtn" title="Send message (Enter)" aria-label="Send message" disabled>
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-disclaimer">
+            <span>ChatGPT can make mistakes. AI Banking Assistant powered by n8n. Verify important financial terms.</span>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Settings Modal -->
+    <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <i class="fa-solid fa-sliders"></i>
+            <h2 id="settingsModalTitle">Settings & n8n Integration</h2>
+          </div>
+          <button class="icon-btn modal-close-btn" id="closeSettingsBtn" title="Close settings" aria-label="Close settings">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="settings-section">
+            <h3 class="settings-section-title">n8n Webhook Configuration</h3>
+            <p class="settings-desc">Your chat messages are sent directly to your active n8n production webhook.</p>
+
+            <div class="form-group">
+              <label for="webhookUrlInput">Production Webhook URL</label>
+              <div class="input-with-button">
+                <input
+                  type="url"
+                  id="webhookUrlInput"
+                  class="text-input"
+                  value="https://yamuna0804.app.n8n.cloud/webhook/chat"
+                  placeholder="https://your-n8n.cloud/webhook/..."
+                >
+                <button class="btn btn-secondary" id="testWebhookBtn">
+                  <i class="fa-solid fa-wifi"></i> Test
+                </button>
+              </div>
+              <div class="webhook-test-result" id="webhookTestResult" style="display: none;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="webhookPayloadKey">JSON Payload Property</label>
+              <input
+                type="text"
+                id="webhookPayloadKey"
+                class="text-input"
+                value="chatInput"
+                placeholder="chatInput (Default for Basic LLM Chain)"
+              >
+              <small class="form-hint">Our client automatically passes <code>chatInput</code>, <code>message</code>, and <code>prompt</code> to guarantee compatibility.</small>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3 class="settings-section-title">Chat Experience</h3>
+            <div class="toggle-option">
+              <div>
+                <strong>Streaming Typing Effect</strong>
+                <p>Simulate ChatGPT-like smooth real-time typing animation for responses.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="streamingToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-option">
+              <div>
+                <strong>Auto-generate Chat Titles</strong>
+                <p>Use the first query to automatically title chats in the sidebar.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="autoTitleToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-option">
+              <div>
+                <strong>Text-to-Speech Voice</strong>
+                <p>Read assistant answers aloud using browser speech synthesis.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="ttsToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-section danger-zone">
+            <h3 class="settings-section-title">Storage & Conversations</h3>
+            <div class="storage-action-row">
+              <button class="btn btn-secondary" id="exportAllChatsBtn">
+                <i class="fa-solid fa-download"></i> Backup All Chats (JSON)
+              </button>
+              <button class="btn btn-danger" id="clearAllHistoryBtn">
+                <i class="fa-regular fa-trash-can"></i> Clear All History
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="resetSettingsBtn">Reset to Defaults</button>
+          <button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename Chat Modal -->
+    <div class="modal-backdrop" id="renameModal" role="dialog" aria-modal="true">
+      <div class="modal-dialog modal-small">
+        <div class="modal-header">
+          <h2 class="modal-title">Rename Chat</h2>
+          <button class="icon-btn modal-close-btn" id="closeRenameBtn">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="renameChatInput">New Title</label>
+            <input type="text" id="renameChatInput" class="text-input" maxlength="60">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelRenameBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmRenameBtn">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer" aria-live="assertive"></div>
+  </div>
+
+  <!-- Main JavaScript App -->
+  <script src="app.js"></script>
+</body>
+</html>

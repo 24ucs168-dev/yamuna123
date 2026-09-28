@@ -1,0 +1,17 @@
+{
+  "name": "chatgpt-n8n-chatbot",
+  "version": "1.0.0",
+  "description": "ChatGPT-like conversational UI powered by n8n AI webhook workflow",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "chatgpt",
+    "n8n",
+    "chatbot",
+    "ai-assistant"
+  ],
+  "author": "",
+  "license": "MIT"
+}
